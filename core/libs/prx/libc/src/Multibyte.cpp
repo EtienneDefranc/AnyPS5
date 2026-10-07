@@ -122,6 +122,26 @@ int APS5_VABI wcsrtombs_s_nid_postfix(
     return 0;
 }
 
+std::size_t APS5_VABI wcsrtombs_nid_postfix(char* destination, const std::uint16_t** source, std::size_t count, void*) {
+    const auto* wide = *source;
+    std::size_t converted = 0;
+    for (; !destination || converted < count; ++converted) {
+        const auto value = wide[converted];
+        if (value > 255) {
+            errno = 86;
+            if (destination) *source = wide + converted;
+            return static_cast<std::size_t>(-1);
+        }
+        if (destination) destination[converted] = static_cast<char>(value);
+        if (value == 0) {
+            if (destination) *source = nullptr;
+            return converted;
+        }
+    }
+    *source = wide + converted;
+    return converted;
+}
+
 std::size_t APS5_VABI mbsrtowcs_nid_postfix(std::uint16_t* destination, const char** source, std::size_t capacity, void*) {
     if (!destination) return std::strlen(*source);
     std::size_t converted = 0;
